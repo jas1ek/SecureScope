@@ -8,9 +8,15 @@ export type LoginResponse = {
 
 export type Project = {
   id: number;
+  user_id: number;
   name: string;
-  description?: string | null;
-  created_at?: string;
+  description: string | null;
+  created_at: string;
+};
+
+export type ProjectInput = {
+  name: string;
+  description: string | null;
 };
 
 async function request<T>(
@@ -18,16 +24,22 @@ async function request<T>(
   options: RequestInit = {},
   token?: string
 ): Promise<T> {
+  const headers = new Headers(options.headers);
+
+  if (options.body != null) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
   let response: Response;
 
   try {
     response = await fetch(`${API_URL}${path}`, {
       ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
+      headers,
     });
   } catch {
     throw new Error("Cannot connect to the backend.");
@@ -35,7 +47,6 @@ async function request<T>(
 
   if (!response.ok) {
     const data: unknown = await response.json().catch(() => null);
-
     let message = `Request failed (HTTP ${response.status})`;
 
     if (data && typeof data === "object" && "detail" in data) {
@@ -43,7 +54,25 @@ async function request<T>(
 
       if (typeof detail === "string") {
         message = detail;
+      } else if (Array.isArray(detail)) {
+        message = detail
+          .map((item: unknown) => {
+            if (
+              item &&
+              typeof item === "object" &&
+              "msg" in item &&
+              typeof item.msg === "string"
+            ) {
+              return item.msg;
+            }
+            return "Invalid input";
+          })
+          .join(", ");
       }
+    }
+
+    if (response.status === 401) {
+      message = "Unauthorized. Please sign in again.";
     }
 
     throw new Error(message);
@@ -76,4 +105,38 @@ export function login(email: string, password: string) {
 
 export function getProjects(token: string) {
   return request<Project[]>("/projects", {}, token);
+}
+
+export function createProject(token: string, data: ProjectInput) {
+  return request<Project>(
+    "/projects",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+    token
+  );
+}
+
+export function updateProject(
+  token: string,
+  projectId: number,
+  data: ProjectInput
+) {
+  return request<Project>(
+    `/projects/${projectId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    },
+    token
+  );
+}
+
+export function deleteProject(token: string, projectId: number) {
+  return request<void>(
+    `/projects/${projectId}`,
+    { method: "DELETE" },
+    token
+  );
 }
