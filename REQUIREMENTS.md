@@ -1,100 +1,110 @@
-# SecureScope - wymagania projektu
+# Secure Scope - wymagania projektu
 
 **Przedmiot:** Projektowanie, Bezpieczeństwo i Operacje (DevSecOps)  
-**Autorzy:** Jan Bobrzyk, Julia Marek  
+**Autorzy:** Jan Bobrzyk, Julia Marek
 
-## 1. Cel i uzasadnienie
+## 1. Cel i zakres
 
-SecureScope ma ułatwiać wykrywanie znanych podatności w bibliotekach oraz potencjalnie niebezpiecznych ustawień w plikach konfiguracyjnych. Łączy wyniki kilku prostych analiz w jeden raport, zapisuje historię i pozwala sprawdzić, czy poprawki ograniczyły liczbę wykrytych problemów.
+Secure Scope ma ułatwić wykrywanie podatności w zależnościach oraz ryzykownych konfiguracji projektów programistycznych. Docelowo użytkownik będzie mógł przesłać pojedynczy obsługiwany plik, uruchomić analizę i przejrzeć raport, historię oraz porównanie skanów.
 
-**Rozwiązywany problem:** manualna kontrola zależności i konfiguracji jest rozproszona między narzędziami, przez co łatwo przeoczyć znaną podatność lub niebezpieczne ustawienie.  
-**Dlaczego aplikacja jest potrzebna:** oferuje prosty, wspólny interfejs i historię wyników dla niewielkich projektów.  
-**Podstawowa czynność:** zalogowany użytkownik tworzy projekt, przesyła pojedynczy obsługiwany plik, uruchamia skan i przegląda raport.
+**Zakres etapu 2:** działający szkielet aplikacji, baza danych z relacjami, uwierzytelnianie, bezpieczne operacje na własnych projektach, podstawowa walidacja, uruchomienie kontenerowe i dokumentacja.
 
-Aplikacja nie służy do uruchamiania przesłanych plików ani do pełnego audytu bezpieczeństwa kodu źródłowego. Brak wykrytych problemów nie oznacza braku wszystkich podatności.
+**Poza ukończonym zakresem etapu 2:** upload plików, uruchamianie analizatorów, raporty podatności, historia i porównywanie wyników. Ich realizacja pozostaje zaplanowana.
 
 ## 2. Użytkownicy i uprawnienia
 
-| Rola | Możliwości |
+| Rola | Zakres |
 | --- | --- |
-| Gość | Rejestracja, logowanie, zapoznanie się z opisem aplikacji; bez dostępu do skanów i projektów |
-| Zalogowany użytkownik | Tworzenie i zarządzanie własnymi projektami, przesyłanie plików, uruchamianie skanów, przeglądanie i porównywanie wyłącznie własnych wyników, zmiana statusów wykrytych problemów |
+| Gość | Rejestracja i logowanie; bez dostępu do projektów |
+| Zalogowany użytkownik | Tworzenie, lista, odczyt, edycja i usuwanie wyłącznie własnych projektów |
 
-Nie planuje się panelu administratora jako osobnej funkcji użytkowej w MVP. Operacje utrzymaniowe będą realizowane poza publicznym interfejsem.
+Panel administratora nie stanowi funkcji użytkowej planowanego MVP.
 
 ## 3. Wymagania funkcjonalne
 
-| ID | Wymaganie | Priorytet | Kryterium akceptacji |
-| --- | --- | --- | --- |
-| F01 | Rejestracja konta | MVP | Użytkownik może utworzyć konto poprzez Supabase Auth |
-| F02 | Logowanie i wylogowanie | MVP | Po zalogowaniu dostępne są funkcje prywatne, po wylogowaniu dostęp jest zablokowany |
-| F03 | Zarządzanie własnymi projektami | MVP | Użytkownik może dodać, wyświetlić, edytować i usunąć swój projekt |
-| F04 | Przesyłanie pojedynczego pliku | MVP | Aplikacja przyjmuje tylko obsługiwany format i odrzuca pozostałe |
-| F05 | Analiza `requirements.txt` | MVP | Pakiety z przypiętymi wersjami są sprawdzane w OSV API, a problemy zapisane |
-| F06 | Analiza `Dockerfile` | MVP | Generowany jest raport z Hadolint z opisami wykrytych problemów |
-| F07 | Analiza Docker Compose | MVP | Aplikacja wykrywa wybrane ryzykowne ustawienia i wskazuje ich lokalizację |
-| F08 | Raport z analizy | MVP | Wyniki zawierają typ, opis, poziom ważności (jeśli znany), plik/regułę i zalecenie |
-| F09 | Filtrowanie i status problemów | MVP | Można filtrować wyniki i oznaczać problem jako otwarty, w trakcie lub rozwiązany |
-| F10 | Historia skanów | MVP | Każdy skan ma datę, typ, status i przypisanie do projektu |
-| F11 | Security Time Machine | Rozszerzenie po MVP | Można porównać dwa skany tego samego rodzaju w jednym projekcie i zobaczyć nowe, znikające i nadal wykrywane problemy |
-| F12 | Import z publicznego GitHub | Opcjonalne | Aplikacja pobiera tylko dopuszczone konkretne pliki, bez klonowania pełnego repozytorium |
+**Statusy:** `Wykonane` = implementacja i podstawowe działanie potwierdzone; `Planowane` = nie należy przedstawiać jako gotowego elementu etapu 2.
+
+| ID | Wymaganie | Priorytet projektu | Status | Kryterium akceptacji |
+| --- | --- | --- | --- | --- |
+| F01 | Rejestracja konta | Podstawowy | Wykonane | Nowy użytkownik może utworzyć konto przez FastAPI |
+| F02 | Logowanie i dostęp do funkcji prywatnych | Podstawowy | Wykonane | Poprawne dane dają JWT, błędne hasło daje HTTP 401 |
+| F03 | CRUD własnych projektów | Podstawowy | Wykonane | Użytkownik może tworzyć, odczytywać, edytować i usuwać własne projekty |
+| F04 | Publiczny health check | Podstawowy | Wykonane | GET `/health` -> HTTP 200 i `{"status":"ok"}` |
+| F05 | Trwała baza danych z relacjami | Podstawowy | Wykonane | PostgreSQL: `users`, `projects`, `scans`, klucze obce |
+| F06 | Automatyczne migracje | Podstawowy | Wykonane | Alembic uruchamia się przy starcie backendu |
+| F07 | Przesyłanie pojedynczego pliku | MVP docelowe | Planowane | Allowlista typów, walidacja i limity |
+| F08 | Analiza `requirements.txt` | MVP docelowe | Planowane | Zapytania do OSV API dla jednoznacznych wersji |
+| F09 | Analiza `Dockerfile` | MVP docelowe | Planowane | Raport Hadolint / reguł bezpieczeństwa |
+| F10 | Analiza pliku Compose | MVP docelowe | Planowane | Wykrywanie wybranych niebezpiecznych ustawień |
+| F11 | Analiza `.env.example` | MVP docelowe | Planowane | Wykrywanie podejrzanych wpisów bez ujawniania sekretów |
+| F12 | Raport, filtrowanie i statusy problemów | MVP docelowe | Planowane | Wyniki z opisem, priorytetem i zaleceniami |
+| F13 | Historia skanów | MVP docelowe | Planowane | Skany powiązane z projektem i datą wykonania |
+| F14 | Security Time Machine | Rozszerzenie | Planowane | Porównanie nowych, usuniętych i powtarzających się wyników |
+| F15 | Import plików z publicznego GitHub | Opcjonalne | Planowane | Tylko dopuszczone pliki, bez pełnego klonowania repozytorium |
 
 ## 4. Wymagania bezpieczeństwa
 
-| ID | Wymaganie | Plan realizacji / weryfikacja |
+| ID | Wymaganie | Status etapu 2 / weryfikacja |
 | --- | --- | --- |
-| S01 | Bezpieczne uwierzytelnianie | Supabase Auth; backend niezależnie weryfikuje podpis, issuer, audience i ważność JWT; test żądania bez tokenu |
-| S02 | Kontrola dostępu do danych (BOLA/IDOR) | Weryfikacja właściciela zasobu w API oraz RLS dla tabel; test dostępu z konta B do projektu A |
-| S03 | Ochrona danych w transporcie | HTTPS/TLS w środowisku udostępnionym; brak przesyłania sekretów w URL |
-| S04 | Ochrona przed SQL Injection | Parametryzowane zapytania i bezpieczna warstwa dostępu do danych; testy nietypowych wartości parametrów |
-| S05 | Ochrona przed XSS | Domyślnie bezpieczne renderowanie wyników, bez wstrzykiwania HTML; kontrola CSP we wdrożeniu |
-| S06 | Kontrola uploadu | Allowlista nazw/formatów, ograniczenie rozmiaru, bezpieczne parsowanie, zakaz archiwów i wykonywania przesłanej treści |
-| S07 | Ochrona dostępności | Limit liczby skanów, timeouty analizatorów, limit CPU/pamięci i obsługa błędów API zewnętrznych |
-| S08 | Bezpieczeństwo sesji i żądań | Bezpieczne przechowywanie tokenów, krótki czas życia i poprawna polityka CORS; ochrona CSRF, jeśli zastosowane będą sesje cookie |
-| S09 | Ochrona sekretów aplikacji | Klucze uprzywilejowane tylko po stronie serwera, zmienne środowiskowe, Gitleaks w CI |
-| S10 | Izolacja analizatorów | Uruchamianie analiz jako nieuprzywilejowane procesy/kontenery, bez montowania socketu Dockera i bez wykonywania plików użytkownika |
-| S11 | Rejestrowanie działań | Audit log logowań (gdy dane dostępne), uruchomienia skanów i zmian statusów; bez przechowywania tokenów i sekretów |
-| S12 | Kontrola bezpieczeństwa kodu i zależności | GitHub Actions uruchamia testy, Semgrep, Gitleaks i Trivy; wyniki i błędy widoczne w pull requestach |
+| S01 | Hasła przechowywane bezpiecznie | Wykonane: `password_hash` w formacie Argon2id, zweryfikowane dla dwóch kont |
+| S02 | Uwierzytelnianie | Wykonane: JWT, żądania bez tokenu i z błędnym tokenem odrzucane (HTTP 401) |
+| S03 | Kontrola dostępu BOLA/IDOR | Wykonane: weryfikacja właściciela w FastAPI; testy GET/PATCH/DELETE cudzego projektu zwracają HTTP 404 |
+| S04 | Walidacja danych | Wykonane: Pydantic; brak nazwy, pusta nazwa, nazwa >150 znaków zwracają HTTP 422 |
+| S05 | Ochrona przed SQL Injection | Dostęp przez SQLAlchemy; dodatkowe negatywne testy bezpieczeństwa zalecane |
+| S06 | Bezpieczeństwo sesji i CORS | JWT i konfiguracja CORS są zaimplementowane; przegląd przechowywania tokenów i polityk wdrożeniowych zalecany |
+| S07 | Sekrety aplikacji | `.env` poza Git, `JWT_SECRET_KEY` w konfiguracji backendu; placeholder w `.env.example` |
+| S08 | HTTPS/TLS | Planowane dla środowiska udostępnionego; lokalny development wykorzystuje HTTP |
+| S09 | Bezpieczny upload i parsowanie | Planowane: allowlista, limity, zakaz wykonywania przesłanych plików |
+| S10 | Izolacja i ograniczenia skanerów | Planowane: nieuprzywilejowane uruchamianie, timeouty, limity zasobów |
+| S11 | Ochrona przed XSS i bezpieczne raporty | Do weryfikacji wraz z implementacją raportów; bez wstrzykiwania HTML |
+| S12 | Logowanie zdarzeń i monitoring | Planowane: audyt istotnych operacji bez logowania tokenów i sekretów |
+| S13 | Bezpieczeństwo łańcucha dostaw | GitHub Actions dla frontendu działa; dalsze narzędzia SAST/SCA/sekrety/obrazy zgodnie z planem |
 
 
 ## 5. Model zagrożeń
 
-Model obejmuje wejście użytkownika, frontend, API, bazę danych, analizatory oraz opcjonalny import z GitHuba. Dla każdego zagrożenia podano element, konsekwencję i planowaną kontrolę.
+| ID | Zagrożenie | Konsekwencja | Kontrola / stan |
+| --- | --- | --- | --- |
+| T01 | IDOR/BOLA w projektach | Odczyt lub zmiana cudzych danych | Weryfikacja `user_id` w API; przetestowana |
+| T02 | Podrobiony lub nieważny JWT | Nieuprawniony dostęp | Weryfikacja tokenu i HTTP 401; podstawowe testy wykonane |
+| T03 | SQL Injection | Odczyt lub zmiana bazy | ORM i parametryzacja |
+| T04 | XSS przez przyszły raport | Wykonanie skryptu w przeglądarce | Bezpieczne renderowanie wyników; planowane testy |
+| T05 | Złośliwy / ogromny YAML | Nadmierne zużycie zasobów | Limity rozmiaru, bezpieczny parser; planowane |
+| T06 | Nadużycie analizatorów | Spadek dostępności API | Rate limiting, limity czasu i współbieżności; planowane |
+| T07 | Niebezpieczne wykonanie pliku | Kompromitacja serwera | Plik traktowany jako dane, izolacja procesu; planowane |
+| T08 | Wyciek klucza JWT lub hasła DB | Podszywanie się / dostęp do danych | `.env` poza Git, rotacja sekretów, kontrola CI |
+| T09 | Nieuprawniona zmiana statusu podatności | Ukrycie problemu | Kontrola właściciela i audit log; planowane |
+| T10 | Złośliwa zależność aplikacji | Kompromitacja procesu budowy | Audyty zależności, CI, aktualizacje; dalszy rozwój |
+| T11 | SSRF przy imporcie z GitHub | Dostęp do zasobów wewnętrznych | Allowlista API i domen, kontrola redirectów; opcjonalne |
 
-| ID | Zagrożenie | Czego dotyczy? | Możliwe konsekwencje | Planowana kontrola |
-| --- | --- | --- | --- | --- |
-| T01 | Nieautoryzowany odczyt innego projektu (IDOR/BOLA) | API i baza | Ujawnienie raportów i historii skanów | RLS, weryfikacja właściciela po stronie API, testy dwóch kont |
-| T02 | Podrobiony lub nieważny token | Uwierzytelnianie API | Uzyskanie nieuprawnionego dostępu | Pełna weryfikacja JWT i odrzucanie niepoprawnych tokenów |
-| T03 | SQL Injection | Parametry wejściowe API i baza | Wykradzenie lub modyfikacja danych | Parametryzowane zapytania, testy API |
-| T04 | XSS przez treść raportu | Frontend / opisy błędów | Wykonanie kodu w przeglądarce użytkownika | Bezpieczne renderowanie tekstu, CSP |
-| T05 | Złośliwy lub ogromny YAML | Parser Compose | Nadmierne zużycie pamięci lub awaria | Bezpieczny parser, limity rozmiaru i złożoności, timeout |
-| T06 | Nadużycie skanowania | Backend, OSV i analizatory | Brak dostępności lub nadmierne zużycie zasobów | Rate limiting, limity równoległości i czasu |
-| T07 | Ucieczka z procesu analizy / niebezpieczne wykonanie | Analizatory plików | Wykonanie niepożądanego kodu, kompromitacja serwera | Nie wykonywać treści, izolacja analizatorów, najmniejsze uprawnienia |
-| T08 | Wyciek uprzywilejowanego klucza Supabase | Repozytorium / konfiguracja | Pełen dostęp do danych | Klucze tylko po stronie backendu, Gitleaks, rotacja kluczy |
-| T09 | Nieautoryzowana zmiana statusu problemu | API / historia wyników | Ukrycie nierozwiązanych problemów | Kontrola uprawnień, audyt zmian |
-| T10 | Złośliwa zależność w aplikacji | Łańcuch dostaw oprogramowania | Przejęcie środowiska uruchomieniowego | SCA i kontrola zależności, aktualizacje, skanowanie CI |
-| T11 | SSRF przez adres repozytorium (funkcja opcjonalna) | Pobieranie plików GitHub | Dostęp do zasobów wewnętrznych | Dopuszczone domeny i endpointy API GitHub, kontrola redirectów, brak dowolnych URL |
+## 6. Architektura i przepływ
 
+**Zaimplementowany etap 2:**
 
-## 6. Ogólna architektura i przepływ
+1. Użytkownik rejestruje się albo loguje poprzez React i FastAPI.
+2. Backend przechowuje hash hasła w PostgreSQL i wydaje JWT po poprawnym logowaniu.
+3. React wysyła żądania projektowe z JWT.
+4. FastAPI weryfikuje token, dane wejściowe i właściciela projektu.
+5. SQLAlchemy zapisuje lub odczytuje dane PostgreSQL.
+6. Frontend wyświetla wyłącznie projekty danego użytkownika.
 
-1. Użytkownik uwierzytelnia się w Supabase Auth z poziomu React.
-2. Tworzy projekt i przesyła pojedynczy plik do FastAPI z tokenem dostępu.
-3. FastAPI weryfikuje token, uprawnienia, nazwę/format, rozmiar i strukturę pliku.
-4. Backend wybiera analizator: OSV (Python), Hadolint (Dockerfile), reguły Compose.
-5. Wyniki zostają znormalizowane i zapisane do Supabase PostgreSQL w ramach projektu użytkownika.
-6. Frontend pokazuje raport, statusy oraz historię i umożliwia porównywanie skanów po wdrożeniu rozszerzenia.
+**Przyszły proces skanowania:**
 
+1. Użytkownik wybiera projekt i przesyła pojedynczy obsługiwany plik.
+2. Backend sprawdza format, rozmiar i bezpieczeństwo treści.
+3. Wybierany jest analizator zależności lub konfiguracji.
+4. Wyniki są normalizowane i zapisywane w bazie.
+5. Frontend prezentuje raport, historię i opcjonalne porównanie skanów.
 
-## 7. Plan implementacji i podział na osoby
+Zobacz [DIAGRAM.md](DIAGRAM.md).
 
-| Obszar | Osoba 1 - AppSec & Vulnerability Analysis | Osoba 2 - Infrastructure Security & DevSecOps |
+## 7. Podział pracy
+
+| Obszar | Julia Marek - backend / AppSec | Jan Bobrzyk - frontend / infrastruktura |
 | --- | --- | --- |
-| API, baza, Auth | FastAPI, RLS, API projektów i wyników, JWT | Endpoint uploadu, walidacja danych, obsługa zadań analizy |
-| Moduły analizy | `requirements.txt`, OSV | `Dockerfile`, Compose |
-| React | Logowanie, lista projektów, szczegóły podatności | Upload, dashboard, historia i porównanie skanów |
-| Bezpieczeństwo | IDOR/BOLA, uprawnienia, SQL Injection, testy API | Bezpieczeństwo plików, izolacja, limity, sekrety, CI/CD |
-| Testy | Pytest, RLS i scenariusze API | Testy parserów, uploadu, SAST/SCA/Trivy |
+| Etap 2 | FastAPI, rejestracja, logowanie, JWT, Argon2id, CRUD, SQLAlchemy, Alembic | React, ekrany użytkowników, obsługa CRUD, integracja API, Docker Compose, frontend CI, dokumentacja |
+| Bezpieczeństwo | Testy API i kontroli dostępu | Testy integracyjne, uruchamianie na drugim komputerze, weryfikacja konfiguracji |
+| Kolejne etapy | OSV / analiza zależności, rozwój backendu i API wyników | Upload, analiza Dockerfile/Compose, dashboard, historia i infrastruktura analizatorów |
 
-**Wspólnie:** schemat architektury, model zagrożeń, kontrakt API, review pull requestów, testy integracyjne i dokumentacja.
+Wspólnie: architektura, model zagrożeń, testy integracyjne, code review i dokumentacja.
 
