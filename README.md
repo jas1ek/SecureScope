@@ -139,6 +139,20 @@ VITE_API_URL=http://localhost:8000
 Uruchom Docker Desktop i w katalogu głównym repozytorium wykonaj:
 
 ```bash
+./start.sh
+```
+
+Skrypt automatycznie:
+- Sprawdza dostępność Dockera i Docker Compose.
+- Tworzy plik `.env`, jeśli jeszcze nie istnieje.
+- Generuje losowe hasło PostgreSQL i klucz JWT przy pierwszym uruchomieniu.
+- Zachowuje istniejącą konfigurację `.env`.
+- Uruchamia PostgreSQL, backend FastAPI i frontend React.
+- Uruchamia migracje Alembic podczas startu backendu.
+
+Alternatywnie, jeśli plik `.env` jest już skonfigurowany, aplikację można uruchomić bezpośrednio:
+
+```bash
 docker compose up -d --build
 ```
 
@@ -150,7 +164,6 @@ docker compose ps
 ```
 
 Oczekiwane usługi: `db`, `frontend`, `backend`. PostgreSQL powinien być `healthy`, a pozostałe usługi `Up`. Backend podczas startu wykonuje migracje Alembic.
-
 ### 4. Adresy usług
 
 | Funkcja | Adres |
