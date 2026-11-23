@@ -140,3 +140,78 @@ export function deleteProject(token: string, projectId: number) {
     token
   );
 }
+
+export type ScanFinding = {
+  id: string;
+  package: string;
+  version: string;
+  severity: string;
+};
+
+export type ScanResponse = {
+  scan_id: number;
+  status: string;
+  findings: ScanFinding[];
+};
+
+export type ScanHistoryItem = {
+  scan_id: number;
+  status: string;
+  created_at: string;
+};
+
+export type ScanDetails = ScanResponse & {
+  created_at: string;
+};
+
+export function getScanHistory(token: string, projectId: number) {
+  return request<ScanHistoryItem[]>(
+    `/projects/${projectId}/scans`,
+    {},
+    token
+  );
+}
+
+export function getScanDetails(
+  token: string,
+  projectId: number,
+  scanId: number
+) {
+  return request<ScanDetails>(
+    `/projects/${projectId}/scans/${scanId}`,
+    {},
+    token
+  );
+}
+
+export async function uploadScan(
+  token: string,
+  projectId: number,
+  file: File
+): Promise<ScanResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(
+    `${API_URL}/projects/${projectId}/scans`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+
+    throw new Error(
+      typeof data?.detail === "string"
+        ? data.detail
+        : `Scan failed (HTTP ${response.status})`
+    );
+  }
+
+  return response.json() as Promise<ScanResponse>;
+}

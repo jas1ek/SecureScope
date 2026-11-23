@@ -1,16 +1,13 @@
 import { useState, type FormEvent } from "react";
-
-type ScanResponse = {
-  scan_id: number;
-  status: string;
-  findings: unknown[];
-};
+import { uploadScan, type ScanResponse } from "../../services/api";
 
 type Props = {
   projectId: number;
   token: string;
   onSuccess: (result: ScanResponse) => void;
 };
+
+const MAX_FILE_SIZE = 64 * 1024;
 
 export default function ScanUploadForm({
   projectId,
@@ -26,61 +23,28 @@ export default function ScanUploadForm({
     setError("");
 
     if (!file) {
-      setError("Select a file.");
+      setError("Select a requirements.txt file.");
       return;
     }
 
     if (file.name !== "requirements.txt") {
-      setError("Only requirements.txt is supported at this stage.");
+      setError("Only requirements.txt is supported.");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
+    if (file.size > MAX_FILE_SIZE) {
+      setError("File exceeds the 64 KB limit.");
+      return;
+    }
 
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/projects/${projectId}/scans`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
-
-      const data: unknown = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          `Scan failed (HTTP ${response.status}).`
-        );
-      }
-
-      if (
-        typeof data !== "object" ||
-        data === null ||
-        !("scan_id" in data) ||
-        !("status" in data) ||
-        !("findings" in data) ||
-        typeof data.scan_id !== "number" ||
-        typeof data.status !== "string" ||
-        !Array.isArray(data.findings)
-      ) {
-        throw new Error("Unexpected scan response from API.");
-      }
-
-      onSuccess({
-        scan_id: data.scan_id,
-        status: data.status,
-        findings: data.findings,
-      });
+      const result = await uploadScan(token, projectId, file);
+      onSuccess(result);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Cannot connect to backend."
+        err instanceof Error ? err.message : "Scan failed."
       );
     } finally {
       setLoading(false);
@@ -88,14 +52,27 @@ export default function ScanUploadForm({
   }
 
   return (
-    <form className="project-form" onSubmit={handleSubmit}>
-      <h3>Upload file</h3>
+    <form className="scan-card scan-upload" onSubmit={handleSubmit}>
+      <div className="scan-section-heading">
+        <h2>Upload file</h2>
+        <span className="scan-format">Python dependencies</span>
+      </div>
 
-      <p>Supported format: requirements.txt</p>
+      <p className="scan-muted">
+        Upload requirements.txt with pinned dependencies
+        in the package==version format.
+      </p>
+
+      <label className="scan-file-label" htmlFor="scan-file">
+        Choose requirements.txt
+      </label>
 
       <input
+        id="scan-file"
+        className="scan-file-input"
         type="file"
-        accept=".txt"
+        accept=".txt,text/plain"
+        disabled={loading}
         onChange={(event) => {
           setFile(event.target.files?.[0] ?? null);
           setError("");
@@ -103,15 +80,23 @@ export default function ScanUploadForm({
       />
 
       {file && (
-        <p>
-          Selected: {file.name} ({file.size} bytes)
+        <p className="scan-selected">
+          {file.name} - {file.size} bytes
         </p>
       )}
 
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <p className="scan-error" role="alert">
+          {error}
+        </p>
+      )}
 
-      <button type="submit" disabled={loading || !file}>
-        {loading ? "Scanning..." : "Start scan"}
+      <button
+        className="scan-primary-button"
+        type="submit"
+        disabled={loading || !file}
+      >
+        {loading ? "Scanning dependencies..." : "Start security scan"}
       </button>
     </form>
   );
