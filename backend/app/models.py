@@ -95,3 +95,44 @@ class Scan(Base):
     project: Mapped["Project"] = relationship(
         back_populates="scans",
     )
+
+    findings: Mapped[list["ScanFinding"]] = relationship(
+    back_populates="scan",
+    cascade="all, delete-orphan",
+)
+
+class ScanFinding(Base):
+    __tablename__ = "scan_findings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    scan_id: Mapped[int] = mapped_column(
+        ForeignKey("scans.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    vulnerability_id: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+
+    package: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
+
+    version: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+
+    severity: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+        default="UNKNOWN",
+    )
+
+    scan: Mapped["Scan"] = relationship(
+        back_populates="findings",
+    )
