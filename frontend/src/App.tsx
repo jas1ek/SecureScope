@@ -14,6 +14,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
+import Scan from "./pages/Scan";
 
 import "./App.css";
 
@@ -55,6 +56,14 @@ function AppLayout({ onLogout }: LayoutProps) {
               }
             >
               Projects
+            </NavLink>
+            <NavLink
+              to="/scan"
+              className={({ isActive }) =>
+                isActive ? "nav-link active" : "nav-link"
+              }
+            >
+              Security Scan
             </NavLink>
           </nav>
 
@@ -122,6 +131,7 @@ export default function App() {
         >
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/projects" element={<Projects token={token ?? ""} />} />
+          <Route path="/scan" element={<Scan token={token ?? ""} />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
