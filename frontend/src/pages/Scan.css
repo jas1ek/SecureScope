@@ -243,4 +243,47 @@
     align-items: flex-start;
     flex-direction: column;
   }
+  
+}
+.scan-filters {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.scan-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 1 200px;
+}
+
+.scan-filter-field label {
+  color: #c7d4e8;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.scan-filter-field input,
+.scan-filter-field select {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  color: #edf2ff;
+  background: #0d1525;
+  border: 1px solid #394965;
+  border-radius: 9px;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.scan-filter-field input:focus,
+.scan-filter-field select:focus {
+  outline: 2px solid #729bff;
+  outline-offset: 2px;
+}
+
+.scan-filters .scan-secondary-button {
+  min-height: 42px;
 }
