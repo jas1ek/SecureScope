@@ -252,3 +252,73 @@ def test_scan_details_reject_wrong_project(client, accounts, mock_osv):
     )
 
     assert response.status_code == 404
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [
+        "timeout",
+        "http_error",
+        "invalid_response",
+    ],
+)
+def test_scan_osv_failure(
+    client, accounts, monkeypatch, failure
+):
+    import httpx
+
+    from app.database import get_db
+    from app.models import Scan, ScanFinding
+    from sqlalchemy import select
+
+    user = accounts[0]
+    project_id = user["project_id"]
+
+    def failed_analysis(packages):
+        if failure == "timeout":
+            raise httpx.TimeoutException("OSV timeout")
+
+        if failure == "http_error":
+            raise httpx.HTTPStatusError(
+                "OSV returned HTTP 500",
+                request=httpx.Request(
+                    "POST",
+                    "https://api.osv.dev/v1/querybatch",
+                ),
+                response=httpx.Response(500),
+            )
+
+        raise ValueError("Invalid OSV response")
+
+    monkeypatch.setattr(
+        scans,
+        "analyze_requirements",
+        failed_analysis,
+    )
+
+    response = upload(
+        client,
+        project_id,
+        user["headers"],
+    )
+
+    assert response.status_code == 502
+
+    history = client.get(
+        f"/projects/{project_id}/scans",
+        headers=user["headers"],
+    )
+
+    assert history.status_code == 200
+    assert len(history.json()) == 1
+    assert history.json()[0]["status"] == "failed"
+
+    scan_id = history.json()[0]["scan_id"]
+
+    details = client.get(
+        f"/projects/{project_id}/scans/{scan_id}",
+        headers=user["headers"],
+    )
+
+    assert details.status_code == 200
+    assert details.json()["findings"] == []
